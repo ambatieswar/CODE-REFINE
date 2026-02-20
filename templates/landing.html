@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeReview AI — Smart Code Analysis</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<nav class="navbar">
+  <a href="/" class="nav-brand">⚡ Code<span>Review</span> AI</a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How It Works</a>
+    <a href="#team">Team</a>
+    <a href="/auth" class="btn-nav">Get Started</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div>
+    <div class="hero-badge"><span>⚡</span> Powered by Groq Llama 3.3 70B + Mistral AI</div>
+    <h1>AI-Powered <span class="grad">Code Review</span><br>& Rewrite Agent</h1>
+    <p>Instantly detect bugs, security vulnerabilities, performance issues, and get clean, production-ready rewrites — in seconds.</p>
+    <div class="hero-btns">
+      <a href="/auth" class="btn-primary">Start Reviewing Free</a>
+      <a href="#how" class="btn-outline">See How It Works</a>
+    </div>
+  </div>
+</section>
+
+<section class="features-bg" id="features">
+  <div class="container">
+    <div class="section-title">
+      <div class="tag">Features</div>
+      <h2>Everything You Need for <br>Perfect Code</h2>
+      <p>Four powerful capabilities in one intelligent platform</p>
+    </div>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">🐛</div>
+        <h3>Bug Detection</h3>
+        <p>AI scans every line to find logic errors, null pointer exceptions, and runtime bugs before they reach production.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <h3>Security Analysis</h3>
+        <p>Detect SQL injection, XSS vulnerabilities, insecure dependencies, and OWASP Top 10 risks automatically.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Performance Boost</h3>
+        <p>Identify bottlenecks, inefficient loops, memory leaks, and get suggestions for faster, cleaner algorithms.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h3>Smart Rewrite</h3>
+        <p>One click rewrites your entire codebase — clean, documented, and ready for production deployment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="container">
+    <div class="section-title">
+      <div class="tag">How It Works</div>
+      <h2>From Code to Quality in <br>Four Steps</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-step">
+        <h4>Paste Your Code</h4>
+        <p>Input code in Python, JavaScript, Java, C++, or any major language and select your AI provider.</p>
+      </div>
+      <div class="how-step">
+        <h4>AI Analyzes</h4>
+        <p>Groq Llama 3.3 70B or Mistral AI scans for bugs, security risks, and performance issues in real-time.</p>
+      </div>
+      <div class="how-step">
+        <h4>Get Insights</h4>
+        <p>Receive severity-classified errors with line numbers, descriptions, and actionable fix suggestions.</p>
+      </div>
+      <div class="how-step">
+        <h4>Rewrite & Export</h4>
+        <p>One-click AI rewrite produces clean, documented code. Preview HTML in browser. Export via email.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="team" style="background: var(--bg2);">
+  <div class="container">
+    <div class="section-title">
+      <div class="tag">Team</div>
+      <h2>Meet Our Team</h2>
+      <p>The brilliant minds behind CodeReview AI</p>
+    </div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar" style="background: linear-gradient(135deg,#00d4ff,#7c3aed);">AK</div>
+        <h4>Arjun Kumar</h4>
+        <p>AI/ML Engineer</p>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background: linear-gradient(135deg,#7c3aed,#ec4899);">SR</div>
+        <h4>Sneha Rao</h4>
+        <p>Backend Developer</p>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background: linear-gradient(135deg,#10b981,#06b6d4);">VP</div>
+        <h4>Vikram Patel</h4>
+        <p>Frontend Engineer</p>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background: linear-gradient(135deg,#f59e0b,#ef4444);">MN</div>
+        <h4>Meera Nair</h4>
+        <p>DevOps & Security</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>⚡ CodeReview AI — Built with Groq Llama 3.3 70B &amp; Mistral AI &nbsp;|&nbsp; Flask + MongoDB</p>
+  <p style="margin-top:0.4rem">© 2025 All rights reserved</p>
+</footer>
+
+<!-- CHATBOT -->
+<div class="chatbot-fab">
+  <button class="chat-btn" onclick="toggleChat()" title="Chat with CodeBot">🤖</button>
+</div>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <div class="chat-dot"></div>
+    <div>
+      <h4>CodeBot Assistant</h4>
+      <span>Ask me anything about code</span>
+    </div>
+  </div>
+  <div class="chat-api-row">
+    <input type="password" id="chatApiKey" placeholder="Enter API key..." />
+    <select id="chatProvider">
+      <option value="groq">Groq</option>
+      <option value="mistral">Mistral</option>
+    </select>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg bot">👋 Hi! I'm CodeBot. Paste your API key above and ask me anything about code, bugs, or programming!</div>
+  </div>
+  <div class="chat-input-area">
+    <input type="text" id="chatInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter')sendChat()"/>
+    <button class="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script>
+let chatOpen = false;
+let chatHistory = [];
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatWindow').classList.toggle('open', chatOpen);
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  const apiKey = document.getElementById('chatApiKey').value.trim();
+  const provider = document.getElementById('chatProvider').value;
+  if (!msg) return;
+  if (!apiKey) { showToast('Enter your API key in the chat box', 'error'); return; }
+
+  appendMsg(msg, 'user');
+  chatHistory.push({ role: 'user', content: msg });
+  input.value = '';
+
+  const thinking = appendMsg('...', 'bot');
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: chatHistory, provider, api_key: apiKey })
+  });
+  const data = await res.json();
+  thinking.remove();
+
+  if (data.success) {
+    appendMsg(data.reply, 'bot');
+    chatHistory.push({ role: 'assistant', content: data.reply });
+  } else {
+    appendMsg('⚠️ ' + data.message, 'bot');
+  }
+}
+
+function appendMsg(text, role) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  const container = document.getElementById('chatMessages');
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function showToast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+</body>
+</html>

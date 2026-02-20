@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — CodeReview AI</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<nav class="navbar">
+  <a href="/" class="nav-brand">&#9889; Code<span>Review</span> AI</a>
+  <div class="nav-links">
+    <div class="user-chip">
+      <div class="user-chip-dot">{{ user.name[0].upper() }}</div>
+      {{ user.name }}
+    </div>
+    <a href="/history" style="color:var(--text2);font-size:0.875rem">History</a>
+    <a href="/logout" style="color:var(--text2);font-size:0.875rem">Sign Out</a>
+  </div>
+</nav>
+
+<div class="dash-layout">
+  <aside class="sidebar">
+    <a href="/dashboard" class="active"><span class="icon">&#127968;</span> Dashboard</a>
+    <a href="/history"><span class="icon">&#128220;</span> History</a>
+    <div class="sidebar-bottom">
+      <a href="/logout"><span class="icon">&#128682;</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-header">
+      <h1>Code Review &amp; Rewrite</h1>
+      <p>Select your AI provider, model, and language — then paste your code</p>
+    </div>
+
+    <!-- MODEL SELECTOR BAR -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Provider</span>
+        <div style="display:flex;gap:6px">
+          <button class="provider-pill active" id="pill-groq" onclick="switchProvider('groq')">&#9889; Groq</button>
+          <button class="provider-pill" id="pill-mistral" onclick="switchProvider('mistral')">&#127754; Mistral</button>
+        </div>
+      </div>
+      <div style="width:1px;height:32px;background:var(--border)"></div>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:220px">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Model</span>
+        <select class="select-sm" id="modelSelect" style="flex:1;max-width:280px">
+          {% for key, label in groq_models.items() %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Language</span>
+        <select class="select-sm" id="langSelect">
+          <option value="python">Python</option>
+          <option value="javascript">JavaScript</option>
+          <option value="java">Java</option>
+          <option value="cpp">C++</option>
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="typescript">TypeScript</option>
+          <option value="go">Go</option>
+          <option value="rust">Rust</option>
+          <option value="php">PHP</option>
+          <option value="sql">SQL</option>
+        </select>
+      </div>
+      <div id="modelInfo" style="margin-left:auto;font-size:0.75rem;color:var(--text3)">&#9989; Groq API configured</div>
+    </div>
+
+    <!-- CODE INPUT PANEL -->
+    <div class="code-panel" style="position:relative">
+      <div class="loading-overlay" id="analyzeLoader">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loaderText">Analyzing your code...</div>
+      </div>
+      <div class="code-panel-header">
+        <h3>&#128221; Your Code</h3>
+        <div class="panel-controls">
+          <button class="btn-sm btn-analyze" onclick="analyzeCode()">&#128269; Analyze Code</button>
+          <button class="btn-sm btn-rewrite" onclick="rewriteCode()">&#10024; Rewrite Code</button>
+          <button class="btn-sm btn-preview" onclick="previewCode()">&#128065; Preview</button>
+          <button class="btn-sm btn-copy" onclick="copyCode('codeInput')">&#128203; Copy</button>
+        </div>
+      </div>
+      <textarea class="code-textarea" id="codeInput" placeholder="Paste your code here..."></textarea>
+    </div>
+
+    <!-- RESULTS AREA -->
+    <div class="results-area" id="resultsArea">
+      <div class="stats-row" id="statsRow"></div>
+
+      <div class="code-panel" style="margin-bottom:1.5rem">
+        <div class="code-panel-header">
+          <h3>&#128202; Review Summary</h3>
+          <span id="usedModelBadge" style="font-size:0.75rem;color:var(--text3)"></span>
+        </div>
+        <div style="padding:1.25rem">
+          <div class="score-bar-wrap">
+            <div class="score-header">
+              <span class="score-label">Code Quality Score</span>
+              <span class="score-val" id="scoreVal">—</span>
+            </div>
+            <div class="score-bar"><div class="score-fill" id="scoreFill" style="width:0%"></div></div>
+          </div>
+          <div style="color:var(--text2);font-size:0.9rem;line-height:1.6" id="summaryText"></div>
+        </div>
+      </div>
+
+      <div class="code-panel" style="margin-bottom:1.5rem">
+        <div class="code-panel-header">
+          <h3 id="errorsTitle">&#128027; Issues Found</h3>
+        </div>
+        <div style="padding:1.25rem" id="errorsList"></div>
+      </div>
+    </div>
+
+    <!-- REWRITE PANEL -->
+    <div class="rewrite-panel" id="rewritePanel">
+      <div class="code-panel-header">
+        <h3>&#10024; Rewritten Code</h3>
+        <div class="panel-controls">
+          <button class="btn-sm btn-preview" onclick="previewRewritten()">&#128065; Preview</button>
+          <button class="btn-sm btn-copy" onclick="copyCode('rewrittenCode')">&#128203; Copy</button>
+        </div>
+      </div>
+      <textarea class="rewrite-code" id="rewrittenCode" readonly></textarea>
+    </div>
+
+  </main>
+</div>
+
+<!-- CHAT ASSISTANT -->
+<div class="chatbot-fab">
+  <button class="chat-btn" onclick="toggleChat()" title="Ask CodeBot">&#129302;</button>
+</div>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <div class="chat-dot"></div>
+    <div>
+      <h4>CodeBot Assistant</h4>
+      <span id="chatModelLabel">Groq · Llama 3.3 70B</span>
+    </div>
+    <button onclick="toggleChat()" style="margin-left:auto;background:transparent;border:none;color:var(--text2);cursor:pointer;font-size:1rem">&#10005;</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg bot">&#128075; Hi {{ user.name.split(' ')[0] }}! I'm CodeBot. Ask me anything about your code!</div>
+  </div>
+  <div class="chat-input-area">
+    <input type="text" id="chatInput" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter')sendChat()"/>
+    <button class="chat-send" onclick="sendChat()">&#10148;</button>
+  </div>
+</div>
+
+<style>
+.provider-pill {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.provider-pill.active {
+  background: rgba(0,212,255,0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+</style>
+
+<script>
+var currentProvider = 'groq';
+var chatOpen = false;
+var chatHistory = [];
+
+var groqModels = {{ groq_models | tojson }};
+var mistralModels = {{ mistral_models | tojson }};
+
+function switchProvider(p) {
+  currentProvider = p;
+  document.getElementById('pill-groq').classList.toggle('active', p === 'groq');
+  document.getElementById('pill-mistral').classList.toggle('active', p === 'mistral');
+
+  var sel = document.getElementById('modelSelect');
+  sel.innerHTML = '';
+  var models = p === 'groq' ? groqModels : mistralModels;
+  Object.keys(models).forEach(function(key) {
+    var opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = models[key];
+    sel.appendChild(opt);
+  });
+
+  var infoEl = document.getElementById('modelInfo');
+  infoEl.textContent = (p === 'groq' ? '✅ Groq API configured' : '✅ Mistral API configured');
+  updateChatModelLabel();
+}
+
+function updateChatModelLabel() {
+  var sel = document.getElementById('modelSelect');
+  var models = currentProvider === 'groq' ? groqModels : mistralModels;
+  var label = models[sel.value] || sel.value;
+  document.getElementById('chatModelLabel').textContent = (currentProvider === 'groq' ? 'Groq' : 'Mistral') + ' · ' + label;
+}
+
+document.getElementById('modelSelect').addEventListener('change', updateChatModelLabel);
+
+async function analyzeCode() {
+  var code = document.getElementById('codeInput').value.trim();
+  if (!code) { showToast('Paste some code first', 'error'); return; }
+
+  var language = document.getElementById('langSelect').value;
+  var model = document.getElementById('modelSelect').value;
+  var models = currentProvider === 'groq' ? groqModels : mistralModels;
+
+  var loader = document.getElementById('analyzeLoader');
+  loader.classList.add('show');
+  document.getElementById('loaderText').textContent = 'Analyzing with ' + (models[model] || model) + '...';
+
+  try {
+    var res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, language: language, provider: currentProvider, model: model })
+    });
+    var data = await res.json();
+    if (!data.success) { showToast(data.message, 'error'); return; }
+    document.getElementById('usedModelBadge').textContent = (currentProvider === 'groq' ? 'Groq' : 'Mistral') + ' · ' + (models[model] || model);
+    renderResults(data.data);
+    showToast('Analysis complete!', 'success');
+  } catch(e) {
+    showToast('Request failed: ' + e.message, 'error');
+  } finally {
+    loader.classList.remove('show');
+  }
+}
+
+function renderResults(d) {
+  var resultsArea = document.getElementById('resultsArea');
+  resultsArea.classList.add('show');
+
+  var score = d.score || 0;
+  document.getElementById('scoreVal').textContent = score + '/100';
+  document.getElementById('scoreVal').style.color = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--orange)' : 'var(--red)';
+  setTimeout(function() { document.getElementById('scoreFill').style.width = score + '%'; }, 100);
+  document.getElementById('summaryText').textContent = d.summary || '';
+
+  var errCount = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+  var errors = d.errors || [];
+  errors.forEach(function(e) { if (errCount[e.severity] !== undefined) errCount[e.severity]++; });
+
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-card red"><div class="val">' + errCount.Critical + '</div><div class="lbl">Critical</div></div>' +
+    '<div class="stat-card orange"><div class="val">' + errCount.High + '</div><div class="lbl">High</div></div>' +
+    '<div class="stat-card"><div class="val" style="color:var(--yellow)">' + errCount.Medium + '</div><div class="lbl">Medium</div></div>' +
+    '<div class="stat-card blue"><div class="val">' + errCount.Low + '</div><div class="lbl">Low</div></div>';
+
+  var list = document.getElementById('errorsList');
+  var title = document.getElementById('errorsTitle');
+
+  if (!d.has_errors || errors.length === 0) {
+    list.innerHTML = '<div class="no-errors-msg"><div class="check">&#10003;</div><div style="font-size:1rem;font-weight:600">No errors found! Your code is clean and production-ready.</div></div>';
+    title.textContent = '&#10003; No Issues Found';
+  } else {
+    title.textContent = '&#128027; ' + errors.length + ' Issue' + (errors.length > 1 ? 's' : '') + ' Found';
+    list.innerHTML = errors.map(function(e) {
+      var sev = (e.severity || '').toLowerCase();
+      return '<div class="error-item ' + sev + '">' +
+        '<div class="error-top">' +
+        '<span class="badge ' + sev + '">' + (e.severity || 'Unknown') + '</span>' +
+        '<span class="badge type">' + (e.type || 'Issue') + '</span>' +
+        '<span class="error-line">Line ' + (e.line || 'N/A') + '</span>' +
+        '</div>' +
+        '<div class="error-desc">' + escHtml(e.description || '') + '</div>' +
+        '<div class="error-fix"><strong>Fix:</strong> ' + escHtml(e.fix || 'No fix provided') + '</div>' +
+        '</div>';
+    }).join('');
+  }
+  resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function rewriteCode() {
+  var code = document.getElementById('codeInput').value.trim();
+  if (!code) { showToast('Paste some code first', 'error'); return; }
+
+  var language = document.getElementById('langSelect').value;
+  var model = document.getElementById('modelSelect').value;
+  var models = currentProvider === 'groq' ? groqModels : mistralModels;
+
+  var loader = document.getElementById('analyzeLoader');
+  loader.classList.add('show');
+  document.getElementById('loaderText').textContent = 'Rewriting with ' + (models[model] || model) + '...';
+
+  try {
+    var res = await fetch('/api/rewrite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, language: language, provider: currentProvider, model: model })
+    });
+    var data = await res.json();
+    if (!data.success) { showToast(data.message, 'error'); return; }
+    document.getElementById('rewrittenCode').value = data.data;
+    document.getElementById('rewritePanel').classList.add('show');
+    document.getElementById('rewritePanel').scrollIntoView({ behavior: 'smooth' });
+    showToast('Code rewritten successfully!', 'success');
+  } catch(e) {
+    showToast('Request failed: ' + e.message, 'error');
+  } finally {
+    loader.classList.remove('show');
+  }
+}
+
+function previewCode() {
+  var code = document.getElementById('codeInput').value.trim();
+  var lang = document.getElementById('langSelect').value;
+  if (!code) { showToast('No code to preview', 'error'); return; }
+  openPreview(code, lang);
+}
+
+function previewRewritten() {
+  var code = document.getElementById('rewrittenCode').value.trim();
+  var lang = document.getElementById('langSelect').value;
+  if (!code) { showToast('No rewritten code to preview', 'error'); return; }
+  openPreview(code, lang);
+}
+
+function openPreview(code, lang) {
+  var form = document.createElement('form');
+  form.method = 'GET'; form.action = '/preview'; form.target = '_blank';
+  var c = document.createElement('input'); c.name = 'code'; c.value = code; form.appendChild(c);
+  var l = document.createElement('input'); l.name = 'language'; l.value = lang; form.appendChild(l);
+  document.body.appendChild(form); form.submit(); form.remove();
+}
+
+function copyCode(id) {
+  var el = document.getElementById(id);
+  var text = el.tagName === 'TEXTAREA' ? el.value : el.textContent;
+  navigator.clipboard.writeText(text).then(function() { showToast('Copied to clipboard!', 'success'); });
+}
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatWindow').classList.toggle('open', chatOpen);
+}
+
+async function sendChat() {
+  var input = document.getElementById('chatInput');
+  var msg = input.value.trim();
+  if (!msg) return;
+  var model = document.getElementById('modelSelect').value;
+
+  appendChatMsg(msg, 'user');
+  chatHistory.push({ role: 'user', content: msg });
+  input.value = '';
+
+  var thinking = appendChatMsg('...', 'bot');
+  try {
+    var res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory, provider: currentProvider, model: model })
+    });
+    var data = await res.json();
+    thinking.remove();
+    if (data.success) {
+      appendChatMsg(data.reply, 'bot');
+      chatHistory.push({ role: 'assistant', content: data.reply });
+    } else {
+      appendChatMsg('Error: ' + data.message, 'bot');
+    }
+  } catch(e) {
+    thinking.remove();
+    appendChatMsg('Network error. Try again.', 'bot');
+  }
+}
+
+function appendChatMsg(text, role) {
+  var div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  var c = document.getElementById('chatMessages');
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+  return div;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type) {
+  type = type || 'info';
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  var icon = type === 'success' ? '&#10003; ' : type === 'error' ? '&#10005; ' : 'ℹ ';
+  t.innerHTML = icon + escHtml(msg);
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 4000);
+}
+</script>
+</body>
+</html>

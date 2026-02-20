@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth — CodeReview AI</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">⚡ Code<span style="color:var(--text)">Review</span> AI</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('signin')">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+      <button class="auth-tab" onclick="switchTab('forgot')">Forgot</button>
+    </div>
+
+    <!-- SIGN IN -->
+    <div class="auth-form active" id="form-signin">
+      <div class="auth-msg" id="msg-signin"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="si-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="si-password" placeholder="••••••••" />
+      </div>
+      <button class="btn-submit" onclick="doSignIn()">Sign In</button>
+      <p style="text-align:center;margin-top:1rem;font-size:0.8rem;color:var(--text2)">
+        No account? <button class="auth-link" onclick="switchTab('signup')">Sign Up</button>
+      </p>
+    </div>
+
+    <!-- SIGN UP -->
+    <div class="auth-form" id="form-signup">
+      <div class="auth-msg" id="msg-signup"></div>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="su-name" placeholder="John Doe" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="su-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="su-password" placeholder="Min 6 characters" />
+      </div>
+      <button class="btn-submit" onclick="doSignUp()">Create Account</button>
+      <p style="text-align:center;margin-top:1rem;font-size:0.8rem;color:var(--text2)">
+        Have account? <button class="auth-link" onclick="switchTab('signin')">Sign In</button>
+      </p>
+    </div>
+
+    <!-- FORGOT PASSWORD -->
+    <div class="auth-form" id="form-forgot">
+      <div class="auth-msg" id="msg-forgot"></div>
+
+      <div id="step-email-wrap">
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" id="fp-email" placeholder="you@example.com" />
+        </div>
+        <button class="btn-submit" onclick="doForgotEmail()">Send OTP</button>
+      </div>
+
+      <div id="step-otp-wrap" style="display:none">
+        <div class="form-group">
+          <label>Enter OTP</label>
+          <input type="text" id="fp-otp" placeholder="6-digit OTP" maxlength="6" />
+        </div>
+        <button class="btn-submit" onclick="doVerifyOtp()">Verify OTP</button>
+      </div>
+
+      <div id="step-newpass-wrap" style="display:none">
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="fp-newpass" placeholder="Min 6 characters" />
+        </div>
+        <button class="btn-submit" onclick="doResetPass()">Reset Password</button>
+      </div>
+
+      <p style="text-align:center;margin-top:1rem;font-size:0.8rem;color:var(--text2)">
+        <button class="auth-link" onclick="switchTab('signin')">Back to Sign In</button>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let forgotEmail = '';
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    const tabs = ['signin','signup','forgot'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('form-' + tab).classList.add('active');
+}
+
+function showMsg(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'auth-msg ' + type;
+  el.style.display = 'block';
+}
+
+async function doSignIn() {
+  const email = document.getElementById('si-email').value.trim();
+  const password = document.getElementById('si-password').value.trim();
+  if (!email || !password) return showMsg('msg-signin', 'Fill all fields', 'error');
+  const btn = document.querySelector('#form-signin .btn-submit');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const res = await fetch('/signin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password}) });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = 'Sign In';
+  if (data.success) { showMsg('msg-signin', data.message, 'success'); setTimeout(() => window.location.href = '/dashboard', 800); }
+  else showMsg('msg-signin', data.message, 'error');
+}
+
+async function doSignUp() {
+  const name = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const password = document.getElementById('su-password').value.trim();
+  if (!name || !email || !password) return showMsg('msg-signup', 'Fill all fields', 'error');
+  const btn = document.querySelector('#form-signup .btn-submit');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  const res = await fetch('/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, email, password}) });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = 'Create Account';
+  if (data.success) { showMsg('msg-signup', data.message, 'success'); setTimeout(() => switchTab('signin'), 1200); }
+  else showMsg('msg-signup', data.message, 'error');
+}
+
+async function doForgotEmail() {
+  const email = document.getElementById('fp-email').value.trim();
+  if (!email) return showMsg('msg-forgot', 'Enter your email', 'error');
+  forgotEmail = email;
+  const res = await fetch('/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email}) });
+  const data = await res.json();
+  if (data.success) {
+    showMsg('msg-forgot', data.message, 'success');
+    document.getElementById('step-email-wrap').style.display = 'none';
+    document.getElementById('step-otp-wrap').style.display = 'block';
+  } else showMsg('msg-forgot', data.message, 'error');
+}
+
+async function doVerifyOtp() {
+  const otp = document.getElementById('fp-otp').value.trim();
+  if (!otp) return showMsg('msg-forgot', 'Enter OTP', 'error');
+  const res = await fetch('/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email: forgotEmail, otp}) });
+  const data = await res.json();
+  if (data.success) {
+    showMsg('msg-forgot', 'OTP verified! Set new password.', 'success');
+    document.getElementById('step-otp-wrap').style.display = 'none';
+    document.getElementById('step-newpass-wrap').style.display = 'block';
+  } else showMsg('msg-forgot', data.message, 'error');
+}
+
+async function doResetPass() {
+  const password = document.getElementById('fp-newpass').value.trim();
+  if (!password) return showMsg('msg-forgot', 'Enter new password', 'error');
+  const res = await fetch('/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email: forgotEmail, password}) });
+  const data = await res.json();
+  if (data.success) {
+    showMsg('msg-forgot', data.message + ' Redirecting...', 'success');
+    setTimeout(() => switchTab('signin'), 1500);
+  } else showMsg('msg-forgot', data.message, 'error');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const active = document.querySelector('.auth-form.active');
+    if (active) active.querySelector('.btn-submit')?.click();
+  }
+});
+</script>
+</body>
+</html>

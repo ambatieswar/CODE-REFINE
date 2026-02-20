@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History — CodeReview AI</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>
+      <span>&#128203; Review Detail</span>
+      <button class="modal-close" onclick="closeDetail()">&#10005;</button>
+    </h3>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- EMAIL POPUP -->
+<div class="modal-overlay" id="emailPopup" onclick="if(event.target===this)closeEmailPopup()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:460px">
+    <h3>
+      <span>&#128231; Send Report via Email</span>
+      <button class="modal-close" onclick="closeEmailPopup()">&#10005;</button>
+    </h3>
+    <div style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:0.875rem 1rem;font-size:0.85rem;color:var(--text2);margin-bottom:1.25rem">
+      &#128161; The full code review report will be sent as a plain-text email to your specified address.
+    </div>
+    <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">Recipient Email Address</label>
+    <input type="email" id="emailToInput" placeholder="recipient@example.com"
+      style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:0.9rem;outline:none;margin-bottom:0.4rem;transition:border-color 0.2s"
+      onkeydown="if(event.key==='Enter')doSendEmail()"
+      onfocus="this.style.borderColor='var(--accent)'"
+      onblur="this.style.borderColor='var(--border2)'" />
+    <div style="font-size:0.75rem;color:var(--text3);margin-bottom:1.25rem">You can send to any email address.</div>
+    <div style="display:flex;gap:0.75rem">
+      <button onclick="closeEmailPopup()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--text2);font-family:'Sora',sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer">Cancel</button>
+      <button onclick="doSendEmail()" id="sendEmailBtn" style="flex:2;padding:11px;background:linear-gradient(135deg,var(--green),#059669);border:none;border-radius:10px;color:#fff;font-family:'Sora',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;transition:opacity 0.2s">&#128231; Send Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM POPUP -->
+<div class="modal-overlay" id="deletePopup" onclick="if(event.target===this)closeDeletePopup()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <h3>
+      <span>&#128465; Confirm Delete</span>
+      <button class="modal-close" onclick="closeDeletePopup()">&#10005;</button>
+    </h3>
+    <div id="deletePopupMsg" style="color:var(--text2);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem;padding:1rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px">
+      Are you sure you want to delete this record? This action cannot be undone.
+    </div>
+    <div style="display:flex;gap:0.75rem">
+      <button onclick="closeDeletePopup()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--text2);font-family:'Sora',sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer">Cancel</button>
+      <button onclick="confirmDelete()" id="confirmDeleteBtn" style="flex:1;padding:11px;background:linear-gradient(135deg,var(--red),#dc2626);border:none;border-radius:10px;color:#fff;font-family:'Sora',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer">&#128465; Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE ALL CONFIRM POPUP -->
+<div class="modal-overlay" id="deleteAllPopup" onclick="if(event.target===this)closeDeleteAllPopup()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <h3>
+      <span>&#9888; Delete All History</span>
+      <button class="modal-close" onclick="closeDeleteAllPopup()">&#10005;</button>
+    </h3>
+    <div style="color:var(--text2);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem;padding:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px">
+      &#9888; This will permanently delete <strong style="color:var(--red)">ALL</strong> your review history. This cannot be undone.
+    </div>
+    <div style="display:flex;gap:0.75rem">
+      <button onclick="closeDeleteAllPopup()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--text2);font-family:'Sora',sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer">Cancel</button>
+      <button onclick="confirmDeleteAll()" id="confirmDeleteAllBtn" style="flex:1;padding:11px;background:linear-gradient(135deg,#dc2626,#991b1b);border:none;border-radius:10px;color:#fff;font-family:'Sora',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer">&#128465; Delete All</button>
+    </div>
+  </div>
+</div>
+
+<nav class="navbar">
+  <a href="/" class="nav-brand">&#9889; Code<span>Review</span> AI</a>
+  <div class="nav-links">
+    <div class="user-chip">
+      <div class="user-chip-dot">{{ user.name[0].upper() }}</div>
+      {{ user.name }}
+    </div>
+    <a href="/logout" style="color:var(--text2);font-size:0.875rem">Sign Out</a>
+  </div>
+</nav>
+
+<div class="dash-layout">
+  <aside class="sidebar">
+    <a href="/dashboard"><span class="icon">&#127968;</span> Dashboard</a>
+    <a href="/history" class="active"><span class="icon">&#128220;</span> History</a>
+    <div class="sidebar-bottom">
+      <a href="/logout"><span class="icon">&#128682;</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h1>Review History</h1>
+        <p>View, email, or delete your past code reviews</p>
+      </div>
+      {% if records %}
+      <button onclick="openDeleteAllPopup()"
+        style="display:flex;align-items:center;gap:6px;padding:9px 18px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:#fca5a5;font-family:'Sora',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap"
+        onmouseover="this.style.background='rgba(239,68,68,0.2)'"
+        onmouseout="this.style.background='rgba(239,68,68,0.1)'">
+        &#128465; Delete All
+      </button>
+      {% endif %}
+    </div>
+
+    {% if records %}
+    <div class="history-table">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Language</th>
+            <th>Score</th>
+            <th>Issues</th>
+            <th>Code Preview</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody">
+          {% for r in records %}
+          <tr id="row-{{ r._id }}">
+            <td style="color:var(--text3);font-family:'Space Mono',monospace;font-size:0.75rem">{{ loop.index }}</td>
+            <td style="color:var(--text2);white-space:nowrap;font-size:0.82rem">{{ r.created_at }}</td>
+            <td>
+              <span style="background:rgba(0,212,255,0.1);color:var(--accent);padding:3px 10px;border-radius:100px;font-size:0.75rem;font-weight:700;text-transform:uppercase">{{ r.language }}</span>
+            </td>
+            <td>
+              {% set score = r.review_data.get('score', 0) if r.review_data is mapping else 0 %}
+              <span style="font-weight:700;color:{% if score >= 80 %}var(--green){% elif score >= 50 %}var(--orange){% else %}var(--red){% endif %}">{{ score }}/100</span>
+            </td>
+            <td>
+              {% set errs = r.review_data.get('errors', []) if r.review_data is mapping else [] %}
+              <span style="font-weight:600;font-size:0.85rem;color:{% if errs|length == 0 %}var(--green){% else %}var(--orange){% endif %}">
+                {% if errs|length == 0 %}&#10003; Clean{% else %}{{ errs|length }} issue{{ 's' if errs|length > 1 else '' }}{% endif %}
+              </span>
+            </td>
+            <td><div class="code-preview">{{ r.original_code[:50] }}...</div></td>
+            <td>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="btn-icon" onclick="viewDetail('{{ r._id }}')" title="View Detail">&#128065; View</button>
+                <button class="btn-icon email-btn" onclick="openEmailPopup('{{ r._id }}')" title="Send Email">&#128231; Email</button>
+                <button class="btn-icon" onclick="openDeletePopup('{{ r._id }}')" title="Delete"
+                  style="color:#fca5a5;border-color:rgba(239,68,68,0.3)"
+                  onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+                  onmouseout="this.style.borderColor='rgba(239,68,68,0.3)';this.style.color='#fca5a5'">
+                  &#128465; Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+    <div class="history-table" id="emptyState">
+      <div class="empty-state">
+        <div class="icon">&#128237;</div>
+        <p style="margin-bottom:1.25rem">No review history yet.</p>
+        <a href="/dashboard" class="btn-primary" style="display:inline-block;text-decoration:none;padding:10px 24px">Go to Dashboard</a>
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script id="recordsData" type="application/json">{{ records | tojson }}</script>
+
+<script>
+var allRecords = [];
+var currentEmailRecordId = null;
+var currentDeleteRecordId = null;
+
+try {
+  allRecords = JSON.parse(document.getElementById('recordsData').textContent);
+} catch(e) { allRecords = []; }
+
+function getRecord(id) {
+  for (var i = 0; i < allRecords.length; i++) {
+    if (allRecords[i]._id === id) return allRecords[i];
+  }
+  return null;
+}
+
+function parseReviewData(rd) {
+  if (!rd) return {};
+  if (typeof rd === 'string') { try { return JSON.parse(rd); } catch(e) { return {}; } }
+  return rd;
+}
+
+function viewDetail(id) {
+  var r = getRecord(id);
+  if (!r) { showToast('Record not found', 'error'); return; }
+  var rd = parseReviewData(r.review_data);
+  var errors = rd.errors || [];
+  var score = rd.score || 0;
+  var scoreColor = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--orange)' : 'var(--red)';
+
+  var errHTML = '';
+  if (errors.length === 0) {
+    errHTML = '<div class="no-errors-msg"><div class="check" style="font-size:2rem;margin-bottom:0.5rem">&#10003;</div>No errors found!</div>';
+  } else {
+    errors.forEach(function(e) {
+      var sev = (e.severity || 'low').toLowerCase();
+      errHTML += '<div class="error-item ' + sev + '" style="margin-bottom:0.75rem">' +
+        '<div class="error-top">' +
+        '<span class="badge ' + sev + '">' + escHtml(e.severity || '') + '</span>' +
+        '<span class="badge type">' + escHtml(e.type || '') + '</span>' +
+        '<span class="error-line">Line ' + escHtml(String(e.line || 'N/A')) + '</span>' +
+        '</div>' +
+        '<div class="error-desc">' + escHtml(e.description || '') + '</div>' +
+        '<div class="error-fix"><strong>Fix:</strong> ' + escHtml(e.fix || '') + '</div>' +
+        '</div>';
+    });
+  }
+
+  var rewriteBlock = r.rewritten_code && r.rewritten_code.trim()
+    ? '<div style="margin-top:1.25rem"><h4 style="margin-bottom:0.6rem;font-size:0.9rem;color:var(--accent2)">&#10024; Rewritten Code</h4><pre style="background:var(--bg);border:1px solid rgba(124,58,237,0.3);border-radius:10px;padding:1rem;overflow:auto;font-family:Space Mono,monospace;font-size:0.78rem;color:#a5f3fc;max-height:220px"><code>' + escHtml(r.rewritten_code) + '</code></pre></div>'
+    : '';
+
+  document.getElementById('modalContent').innerHTML =
+    '<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center">' +
+    '<span style="background:rgba(0,212,255,0.1);color:var(--accent);padding:4px 12px;border-radius:8px;font-size:0.8rem;font-weight:700">' + escHtml((r.language||'').toUpperCase()) + '</span>' +
+    '<span style="color:var(--text2);font-size:0.8rem">&#128197; ' + escHtml(r.created_at||'') + '</span>' +
+    '<span style="font-weight:700;color:' + scoreColor + '">Score: ' + score + '/100</span>' +
+    '<div style="margin-left:auto;display:flex;gap:6px">' +
+    '<button onclick="openEmailPopup(\'' + id + '\');closeDetail()" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--green);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-family:Sora,sans-serif;font-weight:600">&#128231; Email</button>' +
+    '<button onclick="openDeletePopup(\'' + id + '\');closeDetail()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-family:Sora,sans-serif;font-weight:600">&#128465; Delete</button>' +
+    '</div></div>' +
+    '<p style="color:var(--text2);font-size:0.875rem;line-height:1.6;margin-bottom:1.25rem;padding:0.75rem;background:var(--bg2);border-radius:8px">' + escHtml(rd.summary || 'No summary.') + '</p>' +
+    '<h4 style="margin-bottom:0.75rem;font-size:0.9rem">&#128027; Issues Found (' + errors.length + ')</h4>' +
+    errHTML +
+    '<div style="margin-top:1.25rem"><h4 style="margin-bottom:0.6rem;font-size:0.9rem">Original Code</h4>' +
+    '<pre style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;overflow:auto;font-family:Space Mono,monospace;font-size:0.78rem;color:var(--text2);max-height:220px"><code>' + escHtml(r.original_code||'') + '</code></pre></div>' +
+    rewriteBlock;
+
+  document.getElementById('detailModal').style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').style.display = 'none';
+}
+
+function openEmailPopup(id) {
+  currentEmailRecordId = id;
+  document.getElementById('emailToInput').value = '';
+  document.getElementById('sendEmailBtn').textContent = '📧 Send Report';
+  document.getElementById('sendEmailBtn').disabled = false;
+  document.getElementById('sendEmailBtn').style.background = 'linear-gradient(135deg,var(--green),#059669)';
+  document.getElementById('emailPopup').style.display = 'flex';
+  setTimeout(function() { document.getElementById('emailToInput').focus(); }, 100);
+}
+
+function closeEmailPopup() {
+  document.getElementById('emailPopup').style.display = 'none';
+  currentEmailRecordId = null;
+}
+
+async function doSendEmail() {
+  var toEmail = document.getElementById('emailToInput').value.trim();
+  if (!toEmail || !toEmail.includes('@')) { showToast('Enter a valid email address', 'error'); return; }
+  if (!currentEmailRecordId) return;
+  var btn = document.getElementById('sendEmailBtn');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  try {
+    var res = await fetch('/api/send-history-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ record_id: currentEmailRecordId, to_email: toEmail })
+    });
+    var data = await res.json();
+    if (data.success) {
+      showToast(data.message, 'success');
+      btn.textContent = '✓ Sent!';
+      btn.style.background = 'var(--green)';
+      setTimeout(closeEmailPopup, 1500);
+    } else {
+      showToast(data.message, 'error');
+      btn.textContent = '📧 Send Report';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    showToast('Network error. Try again.', 'error');
+    btn.textContent = '📧 Send Report';
+    btn.disabled = false;
+  }
+}
+
+function openDeletePopup(id) {
+  currentDeleteRecordId = id;
+  document.getElementById('deletePopup').style.display = 'flex';
+}
+
+function closeDeletePopup() {
+  document.getElementById('deletePopup').style.display = 'none';
+  currentDeleteRecordId = null;
+}
+
+async function confirmDelete() {
+  if (!currentDeleteRecordId) return;
+  var btn = document.getElementById('confirmDeleteBtn');
+  btn.textContent = 'Deleting...';
+  btn.disabled = true;
+  try {
+    var res = await fetch('/api/delete-history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ record_id: currentDeleteRecordId })
+    });
+    var data = await res.json();
+    if (data.success) {
+      var row = document.getElementById('row-' + currentDeleteRecordId);
+      if (row) {
+        row.style.transition = 'all 0.3s';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-20px)';
+        setTimeout(function() {
+          row.remove();
+          allRecords = allRecords.filter(function(r) { return r._id !== currentDeleteRecordId; });
+          if (allRecords.length === 0) { location.reload(); }
+        }, 300);
+      }
+      showToast('Record deleted successfully', 'success');
+      closeDeletePopup();
+    } else {
+      showToast(data.message, 'error');
+      btn.textContent = '🗑 Delete';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    showToast('Network error. Try again.', 'error');
+    btn.textContent = '🗑 Delete';
+    btn.disabled = false;
+  }
+}
+
+function openDeleteAllPopup() {
+  document.getElementById('deleteAllPopup').style.display = 'flex';
+}
+
+function closeDeleteAllPopup() {
+  document.getElementById('deleteAllPopup').style.display = 'none';
+}
+
+async function confirmDeleteAll() {
+  var btn = document.getElementById('confirmDeleteAllBtn');
+  btn.textContent = 'Deleting...';
+  btn.disabled = true;
+  try {
+    var res = await fetch('/api/delete-all-history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    var data = await res.json();
+    if (data.success) {
+      showToast(data.message, 'success');
+      setTimeout(function() { location.reload(); }, 800);
+    } else {
+      showToast(data.message, 'error');
+      btn.textContent = '🗑 Delete All';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    showToast('Network error. Try again.', 'error');
+    btn.textContent = '🗑 Delete All';
+    btn.disabled = false;
+  }
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type) {
+  type = type || 'info';
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  var icon = type === 'success' ? '✓ ' : type === 'error' ? '✕ ' : 'ℹ ';
+  t.innerHTML = icon + escHtml(msg);
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 4000);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeDetail();
+    closeEmailPopup();
+    closeDeletePopup();
+    closeDeleteAllPopup();
+  }
+});
+</script>
+</body>
+</html>
