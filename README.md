@@ -4,15 +4,36 @@
 
 ---
 
+**The brilliant minds---- behind CodeReview AI**
+<img width="1911" height="880" alt="image" src="https://github.com/user-attachments/assets/16064198-b46f-4bb4-bc43-b32186a07f3f" />
+
+
 ## 🖼️ Output Screenshots
+<img width="1919" height="880" alt="image" src="https://github.com/user-attachments/assets/5678fd59-f99e-45c9-aa5a-ae5c268a81e4" />
+
 
 **Dashboard — Code Analysis Output**
 
-![Dashboard Output](screenshots/output1.png)
+![Dashboard Output]
+<img width="1915" height="870" alt="image" src="https://github.com/user-attachments/assets/3fffcd5f-4019-4bb7-9730-ff85f958a561" />
 
 **History Page — Review Records**
 
-![History Output](screenshots/output2.png)
+![History Output]
+<img width="1916" height="885" alt="image" src="https://github.com/user-attachments/assets/71cf7563-5b64-473f-9bc3-3db4a452c415" />
+
+**Email-Report -- Review Records**
+
+![Email Output]
+<img width="1917" height="868" alt="image" src="https://github.com/user-attachments/assets/2c784307-500e-4240-8d16-ef626661f5d3" />
+
+
+
+**Analysus Report -- Analytics**
+
+![Results Output]
+<img width="1917" height="862" alt="image" src="https://github.com/user-attachments/assets/1bdb4a7b-4d73-42dc-9b60-9a698a90a755" />
+
 
 ---
 
