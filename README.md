@@ -35,6 +35,13 @@
 <img width="1917" height="862" alt="image" src="https://github.com/user-attachments/assets/1bdb4a7b-4d73-42dc-9b60-9a698a90a755" />
 
 
+**Code Generation -- Sample**
+
+![Code Output]
+<img width="1894" height="867" alt="image" src="https://github.com/user-attachments/assets/f27e2c41-15f0-4e85-960b-d1c4569fdee0" />
+
+
+
 ---
 
 ## 📌 About
