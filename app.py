@@ -246,18 +246,38 @@ def api_rewrite():
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
-    if "user" not in session:
-        return jsonify({"success": False, "message": "Not authenticated"})
     data = request.get_json()
     messages = data.get("messages", [])
     provider = data.get("provider", "groq")
-    model = data.get("model", "llama-3.3-70b-versatile")
+    model = "llama-3.3-70b-versatile" if provider == "groq" else "mistral-large-latest"
+
     try:
-        reply = chat_assistant(messages, provider, model)
+        if provider == "mistral":
+            import requests as req
+            system = {"role": "system", "content": "You are CodeBot, an expert AI assistant for code review, debugging, and programming help. Be concise, helpful, and friendly."}
+            resp = req.post(
+                "https://api.mistral.ai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"},
+                json={"model": model, "messages": [system] + messages, "temperature": 0.7, "max_tokens": 1024},
+                timeout=60
+            )
+            resp.raise_for_status()
+            reply = resp.json()["choices"][0]["message"]["content"]
+        else:
+            from groq import Groq
+            client = Groq(api_key=GROQ_API_KEY)
+            system = {"role": "system", "content": "You are CodeBot, an expert AI assistant for code review, debugging, and programming help. Be concise, helpful, and friendly."}
+            response = client.chat.completions.create(
+                model=model,
+                messages=[system] + messages,
+                temperature=0.7,
+                max_tokens=1024
+            )
+            reply = response.choices[0].message.content
+
         return jsonify({"success": True, "reply": reply})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
-
 @app.route("/api/send-history-email", methods=["POST"])
 def send_history_email():
     if "user" not in session:
@@ -330,7 +350,14 @@ def preview():
     language = request.args.get("language", "html")
     if language == "html":
         return code
-    return f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script></head><body style="background:#0d1117;margin:0;padding:20px"><pre><code class="language-{language}" id="code"></code></pre><script>document.getElementById('code').textContent={json.dumps(code)};hljs.highlightAll();</script></body></html>"""
+    return f"""<!DOCTYPE html><html>
+    <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script></head><body style="background:#0d1117;margin:0;padding:20px"><pre>
+    <code class="language-{language}" id="code">
+    </code></pre><script>document.getElementById('code').textContent={json.dumps(code)};hljs.highlightAll();
+    </script>
+    </body>
+    </html>"""
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

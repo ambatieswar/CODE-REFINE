@@ -12,7 +12,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <nav class="navbar">
-  <a href="/" class="nav-brand">⚡ Code<span>Review</span> AI</a>
+  <a href="/" class="nav-brand">⚡ Code<span>Refine</a>
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#how">How It Works</a>
@@ -101,31 +101,26 @@
     </div>
     <div class="team-grid">
       <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg,#00d4ff,#7c3aed);">AK</div>
-        <h4>Arjun Kumar</h4>
+        <div class="team-avatar" style="background: linear-gradient(135deg,#00d4ff,#7c3aed);">AER</div>
+        <h4>AMBATI ESWAR REDDY</h4>
         <p>AI/ML Engineer</p>
       </div>
       <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg,#7c3aed,#ec4899);">SR</div>
-        <h4>Sneha Rao</h4>
+        <div class="team-avatar" style="background: linear-gradient(135deg,#7c3aed,#ec4899);">MST</div>
+        <h4>MADATHALA SHIVA THEJA</h4>
         <p>Backend Developer</p>
       </div>
       <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg,#10b981,#06b6d4);">VP</div>
-        <h4>Vikram Patel</h4>
+        <div class="team-avatar" style="background: linear-gradient(135deg,#10b981,#06b6d4);">BRS</div>
+        <h4>BODAPATI RAJESH</h4>
         <p>Frontend Engineer</p>
-      </div>
-      <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg,#f59e0b,#ef4444);">MN</div>
-        <h4>Meera Nair</h4>
-        <p>DevOps & Security</p>
       </div>
     </div>
   </div>
 </section>
 
 <footer>
-  <p>⚡ CodeReview AI — Built with Groq Llama 3.3 70B &amp; Mistral AI &nbsp;|&nbsp; Flask + MongoDB</p>
+  <p>⚡ CodeReview AI</p>
   <p style="margin-top:0.4rem">© 2025 All rights reserved</p>
 </footer>
 
@@ -141,13 +136,6 @@
       <h4>CodeBot Assistant</h4>
       <span>Ask me anything about code</span>
     </div>
-  </div>
-  <div class="chat-api-row">
-    <input type="password" id="chatApiKey" placeholder="Enter API key..." />
-    <select id="chatProvider">
-      <option value="groq">Groq</option>
-      <option value="mistral">Mistral</option>
-    </select>
   </div>
   <div class="chat-messages" id="chatMessages">
     <div class="msg bot">👋 Hi! I'm CodeBot. Paste your API key above and ask me anything about code, bugs, or programming!</div>
@@ -170,10 +158,7 @@ function toggleChat() {
 async function sendChat() {
   const input = document.getElementById('chatInput');
   const msg = input.value.trim();
-  const apiKey = document.getElementById('chatApiKey').value.trim();
-  const provider = document.getElementById('chatProvider').value;
   if (!msg) return;
-  if (!apiKey) { showToast('Enter your API key in the chat box', 'error'); return; }
 
   appendMsg(msg, 'user');
   chatHistory.push({ role: 'user', content: msg });
@@ -183,7 +168,7 @@ async function sendChat() {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: chatHistory, provider, api_key: apiKey })
+    body: JSON.stringify({ messages: chatHistory, provider: 'groq' })
   });
   const data = await res.json();
   thinking.remove();
